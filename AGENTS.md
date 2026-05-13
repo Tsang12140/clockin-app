@@ -4,6 +4,19 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+## Git workflow
+
+After each clear, self-contained group of changes is finished and the project build passes, automatically create a Git commit for that group.
+
+Before committing:
+
+1. Run `git status` and review the changed files.
+2. Run the appropriate verification, usually `npm.cmd run build` for this app.
+3. Do not include ignored, local, secret, cache, build output, screenshot, archive, or one-off prompt files.
+4. Use a concise commit message that describes the completed change group.
+
+If the build cannot be run or fails, report that clearly and do not commit unless the user explicitly asks.
+
 ## UI font-weight incident playbook
 
 This app has a global `bold-mode` setting. It deliberately changes Tailwind font weight utility classes:
