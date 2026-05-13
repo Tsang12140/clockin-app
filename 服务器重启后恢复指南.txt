@@ -1,0 +1,30 @@
+服务器重启后恢复指南
+两个 Next.js 项目，pm2 为空时按以下步骤操作。pm2 为空必须用 start，不能用 restart。
+
+clockin（端口 3001）
+bash# 第1步：构建
+cd /www/wwwroot/clockin && NODE_OPTIONS="--max-old-space-size=512" npm run build
+
+# 等出现 ✓ Compiled 再继续
+
+# 第2步：启动
+pm2 start npm --name clockin -- run start -- -p 3001
+
+# 第3步：保存
+pm2 save
+
+rent（端口 3000）
+bash# 第1步：构建
+cd /www/wwwroot/rent && NODE_OPTIONS="--max-old-space-size=512" npm run build
+
+# 等出现 ✓ Compiled 再继续
+
+# 第2步：启动
+pm2 start npm --name rent -- run start -- -p 3000
+
+# 第3步：保存
+pm2 save
+
+确认两个都跑起来
+bashpm2 list
+两个项目状态都是 online 就正常了。
