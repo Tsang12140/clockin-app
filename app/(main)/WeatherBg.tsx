@@ -1,9 +1,49 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import type { WeatherCategory } from '@/lib/weather';
 
-const RAIN_DROPS = 14;
+const RAIN_CONFIG: Record<'rainy' | 'heavy-rainy' | 'rainstorm' | 'thunderstorm', { count: number; speed: number; stagger: number }> = {
+  rainy: { count: 14, speed: 0.72, stagger: 0.19 },
+  'heavy-rainy': { count: 22, speed: 0.56, stagger: 0.13 },
+  rainstorm: { count: 32, speed: 0.42, stagger: 0.08 },
+  thunderstorm: { count: 28, speed: 0.46, stagger: 0.09 },
+};
 const SNOW_FLAKES = 10;
+
+function renderRain(category: 'rainy' | 'heavy-rainy' | 'rainstorm' | 'thunderstorm') {
+  const config = RAIN_CONFIG[category];
+  const hasDarkDrops = category === 'heavy-rainy' || category === 'rainstorm' || category === 'thunderstorm';
+  const hasLightning = category === 'thunderstorm';
+
+  return (
+    <div className={`weather-bg weather-bg--${category}`} aria-hidden>
+      {hasLightning && (
+        <>
+          <div className="lightning-bolt lightning-bolt--main" />
+          <div className="lightning-bolt lightning-bolt--side" />
+          <div className="lightning-bolt lightning-bolt--small" />
+        </>
+      )}
+      {Array.from({ length: config.count }, (_, i) => {
+        const isDark = hasDarkDrops && i % 3 === 0;
+        const style = {
+          left: `${((i * 97) % 100) + 0.5}%`,
+          animationDelay: `${((i * config.stagger) % 1.3).toFixed(2)}s`,
+          animationDuration: `${(config.speed + (i % 5) * 0.055).toFixed(2)}s`,
+        } satisfies CSSProperties;
+
+        return (
+          <div
+            key={i}
+            className={`rain-drop ${isDark ? 'rain-drop--dark' : ''}`}
+            style={style}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export default function WeatherBg({ category }: { category: WeatherCategory }) {
   if (category === 'sunny') {
@@ -17,41 +57,8 @@ export default function WeatherBg({ category }: { category: WeatherCategory }) {
     );
   }
 
-  if (category === 'rainy') {
-    return (
-      <div className="weather-bg weather-bg--rainy" aria-hidden>
-        {Array.from({ length: RAIN_DROPS }, (_, i) => (
-          <div
-            key={i}
-            className="rain-drop"
-            style={{
-              left:             `${((i * 97) % 100) + 0.5}%`,
-              animationDelay:   `${((i * 0.19) % 1.4).toFixed(2)}s`,
-              animationDuration:`${(0.7 + (i % 5) * 0.09).toFixed(2)}s`,
-            }}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  if (category === 'thunderstorm') {
-    return (
-      <div className="weather-bg weather-bg--rainy" aria-hidden>
-        <div className="lightning-bolt" />
-        {Array.from({ length: RAIN_DROPS }, (_, i) => (
-          <div
-            key={i}
-            className="rain-drop"
-            style={{
-              left:             `${((i * 97) % 100) + 0.5}%`,
-              animationDelay:   `${((i * 0.19) % 1.4).toFixed(2)}s`,
-              animationDuration:`${(0.7 + (i % 5) * 0.09).toFixed(2)}s`,
-            }}
-          />
-        ))}
-      </div>
-    );
+  if (category === 'rainy' || category === 'heavy-rainy' || category === 'rainstorm' || category === 'thunderstorm') {
+    return renderRain(category);
   }
 
   if (category === 'snowy') {

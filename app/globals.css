@@ -182,30 +182,44 @@ html, body {
 
 /* Rainy */
 .weather-bg--rainy { background: linear-gradient(160deg, #DDEEFF 0%, #EBF3FF 100%); }
+.weather-bg--heavy-rainy { background: linear-gradient(160deg, #D8E2EC 0%, #E5ECF4 100%); }
+.weather-bg--rainstorm {
+  background:
+    linear-gradient(160deg, rgba(15, 23, 42, 0.14), rgba(15, 23, 42, 0.05)),
+    linear-gradient(160deg, #CAD4DF 0%, #E3E9F0 100%);
+}
+.weather-bg--thunderstorm {
+  background:
+    linear-gradient(160deg, rgba(15, 23, 42, 0.18), rgba(30, 41, 59, 0.06)),
+    linear-gradient(160deg, #CDD6E0 0%, #E8EEF5 100%);
+}
 @keyframes lightning-flash {
-  0%, 78%, 100% { opacity: 0; filter: drop-shadow(0 0 0 rgba(250, 204, 21, 0)); }
-  80%           { opacity: 0.95; filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.42)); }
-  82%           { opacity: 0.10; filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.16)); }
-  84%           { opacity: 0.72; filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.34)); }
-  88%           { opacity: 0; filter: drop-shadow(0 0 0 rgba(250, 204, 21, 0)); }
+  0%, 55%, 100% { opacity: 0; filter: drop-shadow(0 0 0 rgba(250, 204, 21, 0)); }
+  58%           { opacity: 0.95; filter: drop-shadow(0 0 9px rgba(250, 204, 21, 0.46)); }
+  60%           { opacity: 0.12; filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.18)); }
+  63%           { opacity: 0.74; filter: drop-shadow(0 0 7px rgba(250, 204, 21, 0.38)); }
+  67%           { opacity: 0; filter: drop-shadow(0 0 0 rgba(250, 204, 21, 0)); }
+  82%           { opacity: 0.62; filter: drop-shadow(0 0 7px rgba(250, 204, 21, 0.32)); }
+  85%           { opacity: 0; filter: drop-shadow(0 0 0 rgba(250, 204, 21, 0)); }
 }
 .lightning-bolt {
   position: absolute;
-  right: 30px;
-  top: 6px;
   width: 18px;
   height: 32px;
   background: #FACC15;
   clip-path: polygon(48% 0, 100% 0, 66% 38%, 100% 38%, 32% 100%, 48% 55%, 12% 55%);
   opacity: 0;
-  animation: lightning-flash 4.8s steps(1, end) infinite;
+  animation: lightning-flash 2.7s steps(1, end) infinite;
   will-change: opacity;
 }
+.lightning-bolt--main { right: 28px; top: 5px; width: 18px; height: 34px; animation-delay: 0s; }
+.lightning-bolt--side { right: 70px; top: 16px; width: 13px; height: 24px; opacity: 0; animation-delay: 0.58s; }
+.lightning-bolt--small { right: 10px; top: 28px; width: 10px; height: 18px; opacity: 0; animation-delay: 1.16s; }
 @keyframes rain-fall {
   0%   { transform: translateY(-12px) scaleY(0.5); opacity: 0; }
-  15%  { opacity: 0.55; }
-  85%  { opacity: 0.55; }
-  100% { transform: translateY(72px)  scaleY(1.2); opacity: 0; }
+  15%  { opacity: 0.62; }
+  85%  { opacity: 0.62; }
+  100% { transform: translateY(84px)  scaleY(1.28); opacity: 0; }
 }
 .rain-drop {
   position: absolute; top: 0;
@@ -213,6 +227,10 @@ html, body {
   background: linear-gradient(to bottom, transparent, #90CAF9);
   animation: rain-fall 0.9s linear infinite;
 }
+.weather-bg--heavy-rainy .rain-drop { width: 1.8px; height: 16px; background: linear-gradient(to bottom, transparent, #6F8FAE); }
+.weather-bg--rainstorm .rain-drop,
+.weather-bg--thunderstorm .rain-drop { width: 2px; height: 20px; background: linear-gradient(to bottom, transparent, rgba(77, 104, 132, 0.78)); }
+.weather-bg .rain-drop--dark { background: linear-gradient(to bottom, transparent, rgba(30, 41, 59, 0.46)); }
 
 /* Snowy */
 .weather-bg--snowy { background: linear-gradient(160deg, #E8F4FD 0%, #F0F8FF 100%); }

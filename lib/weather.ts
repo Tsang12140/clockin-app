@@ -14,12 +14,14 @@ export interface WeatherSnapshot {
   days?:    WeatherDay[];
 }
 
-export type WeatherCategory = 'sunny' | 'rainy' | 'thunderstorm' | 'snowy' | 'cloudy' | 'foggy';
+export type WeatherCategory = 'sunny' | 'rainy' | 'heavy-rainy' | 'rainstorm' | 'thunderstorm' | 'snowy' | 'cloudy' | 'foggy';
 
 export function getWeatherCategory(iconCode: string): WeatherCategory {
   const c = parseInt(iconCode);
   if (c === 100 || c === 150) return 'sunny';
   if (c >= 302 && c <= 304)   return 'thunderstorm';
+  if ([308, 310, 311, 312, 317, 318].includes(c)) return 'rainstorm';
+  if ([307, 315, 316].includes(c)) return 'heavy-rainy';
   if (c >= 300 && c <= 318)   return 'rainy';
   if (c >= 400 && c <= 410)   return 'snowy';
   if (c >= 500 && c <= 515)   return 'foggy';
@@ -97,8 +99,9 @@ export function getWeatherDecisionForDay(snapshot: WeatherSnapshot | null, targe
   const targetAvg = (parseFloat(targetDay.tempMax) + parseFloat(targetDay.tempMin)) / 2;
   const tempDelta = Math.round(targetAvg - todayAvg);
   const hasBigTempChange = Math.abs(tempDelta) >= 5;
-  const todayPrecip = todayCategory === 'rainy' || todayCategory === 'thunderstorm' || todayCategory === 'snowy';
-  const targetPrecip = targetCategory === 'rainy' || targetCategory === 'thunderstorm' || targetCategory === 'snowy';
+  const precipCategories: WeatherCategory[] = ['rainy', 'heavy-rainy', 'rainstorm', 'thunderstorm', 'snowy'];
+  const todayPrecip = precipCategories.includes(todayCategory);
+  const targetPrecip = precipCategories.includes(targetCategory);
 
   const showAnimation =
     targetPrecip ||
