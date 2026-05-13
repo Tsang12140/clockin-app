@@ -104,7 +104,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="text-center text-[11px] text-gray-300 mt-6 pb-4">v1.92</div>
+        <div className="text-center text-[11px] text-gray-300 mt-6 pb-4">v1.93</div>
       </div>
     </div>
   );
