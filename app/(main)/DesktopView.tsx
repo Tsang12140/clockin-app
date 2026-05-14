@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { ChevronLeft, ChevronRight, Edit2, Lock } from 'lucide-react';
 import type { WeatherSnapshot } from '@/lib/weather';
-import { getMonday, getWeekDays } from '@/lib/utils';
+import { addDays, getMonday, getWeekDays } from '@/lib/utils';
 import { loadMonthData, saveAttendance, unlockDay } from './actions';
 import WeatherNotice from './WeatherNotice';
 import DesktopAttendanceEditor, { formatDesktopHours } from './DesktopAttendanceEditor';
@@ -340,6 +340,17 @@ export default function DesktopView({
     : null;
   const weekStart = getMonday(selectedDate ?? today);
   const weekDays = getWeekDays(weekStart);
+  const currentWeekStart = getMonday(today);
+  const canGoNextWeek = addDays(weekStart, 7) <= currentWeekStart;
+
+  const openAdjacentWeek = (direction: -1 | 1) => {
+    const targetWeekStart = addDays(weekStart, direction * 7);
+    let targetDate = addDays(selectedDate ?? weekStart, direction * 7);
+    if (direction > 0 && targetWeekStart === currentWeekStart && targetDate > today) {
+      targetDate = today;
+    }
+    openDate(targetDate);
+  };
 
   const openMissedDate = () => {
     if (!missedDate) return;
@@ -387,7 +398,7 @@ export default function DesktopView({
         : null;
     }
     if (rec.status === 'worked') {
-      return <span className="select-text font-bold text-[#1A3A8F]">{formatDesktopHours(rec.hours)}</span>;
+      return <span className="select-text text-[13px] font-bold text-[#1A3A8F]">{formatDesktopHours(rec.hours)}</span>;
     }
     const label = rec.status === 'custom'
       ? (rec.statusLabel || '特殊')
@@ -456,8 +467,26 @@ export default function DesktopView({
               <div className="mt-5 rounded-xl border border-gray-100 overflow-hidden">
                 <div className="flex items-center justify-between bg-[#F8FAFF] px-4 py-3 border-b border-gray-100">
                   <div className="text-[13px] font-semibold text-gray-500">本周校对</div>
-                  <div className="text-[12px] font-normal text-gray-400">
-                    {weekDays[0].slice(5).replace('-', '/')} - {weekDays[6].slice(5).replace('-', '/')}
+                  <div className="flex items-center gap-2 text-[12px]">
+                    <button
+                      type="button"
+                      onClick={() => openAdjacentWeek(-1)}
+                      disabled={isLoadingMonth}
+                      className="h-7 px-2.5 rounded-lg border border-gray-200 bg-white text-gray-500 font-medium shadow-sm disabled:bg-gray-50 disabled:text-gray-300 disabled:shadow-none"
+                    >
+                      上周
+                    </button>
+                    <span className="min-w-[82px] text-center font-normal text-gray-400">
+                      {weekDays[0].slice(5).replace('-', '/')} - {weekDays[6].slice(5).replace('-', '/')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openAdjacentWeek(1)}
+                      disabled={!canGoNextWeek || isLoadingMonth}
+                      className="h-7 px-2.5 rounded-lg border border-gray-200 bg-white text-gray-500 font-medium shadow-sm disabled:bg-gray-50 disabled:text-gray-300 disabled:shadow-none"
+                    >
+                      下周
+                    </button>
                   </div>
                 </div>
                 <div className="overflow-hidden">
@@ -492,7 +521,7 @@ export default function DesktopView({
                         const isLast = rowIdx === employees.length - 1;
                         return (
                           <tr key={emp.id}>
-                            <td className={`select-text bg-white px-3 py-3 text-center font-semibold text-gray-700 ${!isLast ? 'border-b border-gray-200' : ''}`}>
+                            <td className={`select-text bg-white px-3 py-3 text-center text-[13px] font-semibold text-gray-700 ${!isLast ? 'border-b border-gray-200' : ''}`}>
                               {emp.name}
                             </td>
                             {weekDays.map(date => {
@@ -508,7 +537,7 @@ export default function DesktopView({
                                 </td>
                               );
                             })}
-                            <td className={`select-text border-l border-gray-200 bg-white px-1 py-3 text-center font-bold text-[#1A3A8F] ${!isLast ? 'border-b border-gray-200' : ''}`}>
+                            <td className={`select-text border-l border-gray-200 bg-white px-1 py-3 text-center text-[13px] font-bold text-[#1A3A8F] ${!isLast ? 'border-b border-gray-200' : ''}`}>
                               {total > 0 ? (total % 1 === 0 ? total : total.toFixed(1)) : ''}
                             </td>
                           </tr>
