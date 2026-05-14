@@ -1,5 +1,6 @@
 import WeatherBg from '../WeatherBg';
-import type { WeatherCategory } from '@/lib/weather';
+import { fetchWeatherLocationVerification } from '@/lib/weather';
+import type { WeatherCategory, WeatherLocationVerification } from '@/lib/weather';
 
 const samples: Array<{
   category: WeatherCategory;
@@ -16,9 +17,16 @@ const samples: Array<{
   { category: 'foggy',  title: '雾天', detail: '明日 雾・18~24°C' },
 ];
 
-export default function WeatherPreviewPage() {
+function formatVerifiedLocation(location: WeatherLocationVerification | null) {
+  if (!location) return null;
+  return [location.name, location.adm2, location.adm1].filter(Boolean).join(' / ');
+}
+
+export default async function WeatherPreviewPage() {
   const locationName = process.env.QWEATHER_CITY || '未配置城市';
   const locationId = process.env.QWEATHER_LOCATION || '未配置位置ID';
+  const verifiedLocation = await fetchWeatherLocationVerification();
+  const verifiedLabel = formatVerifiedLocation(verifiedLocation);
 
   return (
     <div className="min-h-screen bg-[#F0F4FA] pb-24">
@@ -29,9 +37,20 @@ export default function WeatherPreviewPage() {
         </div>
 
         <div className="bg-white shadow-sm rounded-2xl px-4 py-3 mb-4">
-          <div className="text-[12px] text-gray-400">当前天气位置</div>
+          <div className="text-[12px] text-gray-400">配置位置</div>
           <div className="mt-1 text-[14px] font-medium text-gray-700">
             {locationName} <span className="text-[12px] font-normal text-gray-400">({locationId})</span>
+          </div>
+          <div className="mt-3 text-[12px] text-gray-400">接口确认</div>
+          <div className="mt-1 text-[14px] font-medium text-gray-700">
+            {verifiedLabel ? (
+              <>
+                {verifiedLabel}
+                <span className="text-[12px] font-normal text-gray-400"> ({verifiedLocation?.id})</span>
+              </>
+            ) : (
+              <span className="text-amber-600">未能校验，请检查位置 ID 或天气接口配置</span>
+            )}
           </div>
         </div>
 

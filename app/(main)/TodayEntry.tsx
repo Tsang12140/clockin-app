@@ -601,19 +601,19 @@ export default function TodayEntry({
 
       {/* ── Employee cards ── */}
       <div className="px-3 pt-1 pb-4 overflow-x-hidden" style={attendanceListStyle}>
-        <div className="space-y-2 origin-top-left" style={attendanceFontStyle}>
+        <div className="space-y-1.5 origin-top-left" style={attendanceFontStyle}>
           {employees.map((emp, empIdx) => {
             const row      = editRows[emp.id] ?? { hours: '8', status: 'worked', customLabel: '' };
             const isWork   = row.status === 'worked';
             const isCustom = row.status === 'custom';
             const badge    = STATUS_BADGE[row.status];
-            const cardBg   = empIdx % 2 === 0 ? 'bg-white' : 'bg-[#F4F7FF]';
+            const cardBg   = empIdx % 2 === 0 ? 'bg-white' : 'bg-[#F7F9FF]';
             const isCompletionActive = completionWaveDate === selectedDate;
             const rowCompleted = locked && (!isCompletionActive || empIdx <= completionWaveStep);
             const showCompletionWave = locked && isCompletionActive && empIdx <= completionWaveStep;
 
             return (
-              <div key={emp.id} className={`${cardBg} rounded-2xl p-3 shadow-sm ring-1 ring-inset ring-[#1A3A8F]/[0.06] [box-shadow:inset_0_-1px_0_rgba(26,58,143,0.08),0_1px_3px_rgba(15,23,42,0.06)]`}>
+              <div key={emp.id} className={`${cardBg} rounded-xl p-3 ring-1 ring-inset ring-[#DCE5F4] [box-shadow:inset_0_-1px_0_rgba(26,58,143,0.06),0_1px_2px_rgba(15,23,42,0.035)]`}>
               <div className="grid grid-cols-[minmax(56px,1fr)_auto_var(--att-status-width)_22px] items-center gap-[var(--att-row-gap)]">
 
                 {/* Name */}

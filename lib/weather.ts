@@ -14,6 +14,13 @@ export interface WeatherSnapshot {
   days?:    WeatherDay[];
 }
 
+export interface WeatherLocationVerification {
+  id:   string;
+  name: string;
+  adm2: string;
+  adm1: string;
+}
+
 export type WeatherCategory = 'sunny' | 'rainy' | 'heavy-rainy' | 'rainstorm' | 'thunderstorm' | 'snowy' | 'cloudy' | 'foggy';
 
 export function getWeatherCategory(iconCode: string): WeatherCategory {
@@ -73,6 +80,31 @@ async function resolveLocId(): Promise<string | null> {
     }
   } catch {}
   return null;
+}
+
+export async function fetchWeatherLocationVerification(): Promise<WeatherLocationVerification | null> {
+  const key = process.env.QWEATHER_KEY ?? '';
+  const locId = process.env.QWEATHER_LOCATION ?? '';
+  if (!key || !locId) return null;
+
+  try {
+    const r = await fetch(
+      `https://${API_HOST}/v2/city/lookup?location=${encodeURIComponent(locId)}&key=${key}`,
+      { next: { revalidate: 24 * 60 * 60 } }
+    );
+    const d = await r.json();
+    const location = Array.isArray(d.location) ? d.location[0] : null;
+    if (d.code !== '200' || !location?.id) return null;
+
+    return {
+      id:   String(location.id ?? ''),
+      name: String(location.name ?? ''),
+      adm2: String(location.adm2 ?? ''),
+      adm1: String(location.adm1 ?? ''),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function getWeatherDecision(snapshot: WeatherSnapshot | null) {

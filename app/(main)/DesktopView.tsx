@@ -61,6 +61,22 @@ function buildMonthData(records: AttRec[]): MonthData {
   return data;
 }
 
+function formatDate(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function resolveDefaultSelectedDate(year: number, month: number, data: MonthData, today: string) {
+  const [todayYear, todayMonth] = today.split('-').map(Number);
+  if (year === todayYear && month === todayMonth) return today;
+
+  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+  const recordedDates = Object.keys(data)
+    .filter(date => date.startsWith(prefix) && Object.keys(data[date] ?? {}).length > 0)
+    .sort();
+
+  return recordedDates[recordedDates.length - 1] ?? formatDate(year, month, 1);
+}
+
 export default function DesktopView({
   employees,
   initialMonthData,
@@ -149,10 +165,11 @@ export default function DesktopView({
       try {
         const recs = await loadMonthData(y, m);
         if (monthRequestRef.current !== requestId) return;
-        setMonthData(buildMonthData(recs));
+        const nextMonthData = buildMonthData(recs);
+        setMonthData(nextMonthData);
         setYear(y);
         setMonth(m);
-        setSelectedDate(null);
+        setSelectedDate(resolveDefaultSelectedDate(y, m, nextMonthData, today));
       } catch {
         if (monthRequestRef.current === requestId) showToast('月份数据加载失败');
       }
@@ -571,7 +588,7 @@ export default function DesktopView({
 
                   return (
                     <button key={date}
-                      onClick={() => setSelectedDate(isSelected ? null : date)}
+                      onClick={() => setSelectedDate(date)}
                       className={`h-14 rounded-lg flex flex-col items-center justify-center gap-1 transition-colors
                         ${isSelected ? 'bg-[#3370FF] text-white shadow-sm' : isToday ? 'bg-blue-50 text-[#3370FF]' : 'hover:bg-blue-50/60'}
                         ${isSunday && !isSelected ? 'opacity-45' : ''}
