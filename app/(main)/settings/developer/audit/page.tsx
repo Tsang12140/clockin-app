@@ -24,6 +24,8 @@ const IMPORTANT_ACTIONS = new Set([
 
 const VISIT_ACTIONS = new Set(['page_view']);
 const ACCOUNT_ACTIONS = new Set(['login', 'logout']);
+const ERROR_ACTIONS = new Set(['client_error', 'ai_error']);
+const AI_ACTIONS = new Set(['ai_request', 'ai_response']);
 
 function shortPhone(phone: string | null) {
   if (!phone) return null;
@@ -105,6 +107,12 @@ function eventSentence(log: AuditLogItem) {
       return { icon: '🚪', text: `${actor} 退出了系统` };
     case 'page_view':
       return { icon: '👀', text: `${actor} 打开了${pageName(log.pageUrl)}` };
+    case 'page_duration':
+      return { icon: '⏱️', text: `${actor} 在${pageName(log.pageUrl)}停留了一会` };
+    case 'ui_click':
+      return { icon: '👆', text: `${actor} ${log.actionLabel}` };
+    case 'developer_unlock':
+      return { icon: '🛡️', text: `${actor} 进入了开发人员选项` };
     case 'save_attendance':
       return { icon: '📝', text: `${actor} 登记了工时${target ? `：${target}` : ''}` };
     case 'unlock_attendance':
@@ -125,12 +133,28 @@ function eventSentence(log: AuditLogItem) {
       return { icon: '💾', text: `${actor} 保存了 AI 预设` };
     case 'delete_ai_preset':
       return { icon: '🗑️', text: `${actor} 删除了 AI 预设` };
+    case 'ai_request':
+      return { icon: '💬', text: `${actor} 向 AI 提问` };
+    case 'ai_response':
+      return { icon: '🤖', text: `AI 完成了回复` };
+    case 'ai_error':
+      return { icon: '⚠️', text: `AI 请求失败，可能需要查看接口` };
+    case 'client_error':
+      return { icon: '⚠️', text: `${actor} 遇到了前端报错` };
     default:
       return { icon: '📍', text: `${actor} 触发了${log.actionLabel || '未知事件'}` };
   }
 }
 
 function eventTone(action: string) {
+  if (ERROR_ACTIONS.has(action)) {
+    return {
+      border: 'border-red-100',
+      bg: 'bg-red-50/50',
+      icon: 'bg-red-50',
+      text: 'text-red-600',
+    };
+  }
   if (IMPORTANT_ACTIONS.has(action)) {
     return {
       border: 'border-[#DDE6FF]',
@@ -159,9 +183,9 @@ function buildStats(logs: AuditLogItem[], fingerprints: AuditFingerprintItem[]) 
   const todayLogs = logs.filter(log => isToday(log.createdAt));
   return [
     { label: '今日事件', value: todayLogs.length },
-    { label: '重点操作', value: todayLogs.filter(log => IMPORTANT_ACTIONS.has(log.action)).length },
-    { label: '页面访问', value: todayLogs.filter(log => VISIT_ACTIONS.has(log.action)).length },
-    { label: '设备指纹', value: fingerprints.length },
+    { label: '活跃设备', value: new Set(todayLogs.map(log => log.fingerprintId)).size || fingerprints.length },
+    { label: 'AI 请求', value: todayLogs.filter(log => log.action === 'ai_request').length },
+    { label: '可能 bug', value: todayLogs.filter(log => ERROR_ACTIONS.has(log.action)).length },
   ];
 }
 
@@ -175,6 +199,62 @@ function Stats({ logs, fingerprints }: { logs: AuditLogItem[]; fingerprints: Aud
         </div>
       ))}
     </div>
+  );
+}
+
+function topItem<T>(items: T[], label: (item: T) => string | null) {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    const key = label(item);
+    if (!key) continue;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+}
+
+function featureName(log: AuditLogItem) {
+  if (log.action.startsWith('ai_')) return 'AI 助手';
+  if (log.action === 'save_attendance' || log.action === 'unlock_attendance' || log.action === 'clear_attendance') return '今日录入';
+  if (log.action.includes('employee')) return '员工管理';
+  if (log.action === 'add_rate_history') return '员工工资';
+  return pageName(log.pageUrl);
+}
+
+function buildInsights(logs: AuditLogItem[]) {
+  const todayLogs = logs.filter(log => isToday(log.createdAt));
+  const scope = todayLogs.length > 0 ? todayLogs : logs;
+  const peak = topItem(scope, log => {
+    const date = new Date(log.createdAt);
+    return Number.isNaN(date.getTime()) ? null : `${date.getHours()} 点`;
+  });
+  const feature = topItem(scope.filter(log => log.action !== 'page_duration'), featureName);
+  const aiRequests = scope.filter(log => log.action === 'ai_request').length;
+  const errors = scope.filter(log => ERROR_ACTIONS.has(log.action));
+
+  return [
+    { label: '高峰时段', value: peak ? `${peak[0]} · ${peak[1]} 次` : '暂无' },
+    { label: '高需求功能', value: feature ? `${feature[0]} · ${feature[1]} 次` : '暂无' },
+    { label: 'AI 使用', value: `${aiRequests} 次提问` },
+    { label: '疑似 bug', value: errors.length > 0 ? `${errors.length} 次错误` : '暂无' },
+  ];
+}
+
+function InsightPanel({ logs }: { logs: AuditLogItem[] }) {
+  return (
+    <section className="mt-3 rounded-2xl bg-white p-4 shadow-sm">
+      <div className="mb-3">
+        <h2 className="text-[14px] font-medium text-gray-800">使用分析</h2>
+        <div className="mt-0.5 text-[12px] font-normal text-gray-400">用来判断高峰时段、常用功能和可能的问题</div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        {buildInsights(logs).map(item => (
+          <div key={item.label} className="rounded-xl bg-[#F8FAFF] px-3 py-3">
+            <div className="text-[12px] font-normal text-gray-400">{item.label}</div>
+            <div className="mt-1 truncate text-[13px] font-medium text-[#1A3A8F]">{item.value}</div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -284,7 +364,7 @@ export default async function AuditPage({ searchParams }: PageProps) {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#F0F4FA]">
+    <div className="audit-log-page min-h-screen bg-[#F0F4FA]">
       <div className="mx-auto max-w-3xl md:px-6 md:py-5">
         <div className="flex items-center bg-white px-4 pb-4 pt-5 shadow-sm md:rounded-2xl">
           <Link href="/settings/developer" className="mr-3 p-1 text-gray-400">
@@ -306,6 +386,7 @@ export default async function AuditPage({ searchParams }: PageProps) {
           {view === 'logs' ? (
             <>
               <Stats logs={logs} fingerprints={fingerprints} />
+              <InsightPanel logs={logs} />
               <EventStream logs={logs} />
             </>
           ) : (

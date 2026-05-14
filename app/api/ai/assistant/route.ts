@@ -1,4 +1,5 @@
 import { answerAttendanceAssistantStream, type AssistantPlan } from '@/lib/ai/attendanceAssistant';
+import { recordAuditLog } from '@/lib/audit';
 import { saveAIChatLog } from '@/lib/ai/history';
 import { getSession } from '@/lib/session';
 import { checkRateLimit } from '@/lib/rateLimit';
@@ -43,11 +44,29 @@ export async function POST(request: Request) {
 
     const encoder = new TextEncoder();
     const userPhone = session.userPhone ?? null;
+    const startedAt = Date.now();
+
+    if (message.trim()) {
+      recordAuditLog({
+        action: 'ai_request',
+        actionLabel: 'AI 提问',
+        pageUrl,
+        user: session,
+        detail: {
+          messagePreview: message.slice(0, 120),
+          historyCount: history.length,
+        },
+      }).catch(() => {});
+    }
 
     const stream = new ReadableStream({
       async start(controller) {
+        let answerCount = 0;
+        let responseMode = 'rules';
         try {
           for await (const result of answerAttendanceAssistantStream(message, history, lastPlan, pageUrl)) {
+            answerCount += 1;
+            responseMode = result.mode;
             const event = `data: ${JSON.stringify({ type: 'answer', ...result })}\n\n`;
             controller.enqueue(encoder.encode(event));
             if (message) {
@@ -62,8 +81,31 @@ export async function POST(request: Request) {
               }).catch(() => {});
             }
           }
+          if (message.trim()) {
+            recordAuditLog({
+              action: 'ai_response',
+              actionLabel: 'AI 完成回复',
+              pageUrl,
+              user: session,
+              detail: {
+                answerCount,
+                mode: responseMode,
+                latencyMs: Date.now() - startedAt,
+              },
+            }).catch(() => {});
+          }
         } catch (error) {
           console.error('[ai-assistant] stream error', error);
+          recordAuditLog({
+            action: 'ai_error',
+            actionLabel: 'AI 请求失败',
+            pageUrl,
+            user: session,
+            detail: {
+              message: error instanceof Error ? error.message : String(error),
+              latencyMs: Date.now() - startedAt,
+            },
+          }).catch(() => {});
           const errorEvent = `data: ${JSON.stringify({ type: 'answer', reply: '刚才没有查成功，稍后再试一下。', actions: [], mode: 'rules' })}\n\n`;
           controller.enqueue(encoder.encode(errorEvent));
         } finally {
@@ -82,6 +124,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('[ai-assistant] request failed', error);
+    recordAuditLog({
+      action: 'ai_error',
+      actionLabel: 'AI 接口失败',
+      pageUrl: null,
+      detail: { message: error instanceof Error ? error.message : String(error) },
+    }).catch(() => {});
     return Response.json(
       { reply: '刚才没有查成功，稍后再试一下。', actions: [], mode: 'rules' },
       { status: 500 },

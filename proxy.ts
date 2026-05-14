@@ -18,6 +18,11 @@ export async function proxy(req: NextRequest) {
     }
     return NextResponse.redirect(new URL('/login', req.url));
   }
+  const isDeveloperChild = pathname.startsWith('/settings/developer/')
+    || pathname === '/weather-preview';
+  if (isDeveloperChild && !session.developerUnlocked) {
+    return NextResponse.redirect(new URL('/settings/developer', req.url));
+  }
   return res;
 }
 

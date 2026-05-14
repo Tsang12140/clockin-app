@@ -59,6 +59,23 @@ html, body {
   font-weight: 700;
 }
 
+.audit-log-page {
+  font-weight: 400;
+}
+.bold-mode .audit-log-page,
+.bold-mode .audit-log-page .font-normal {
+  font-weight: 400;
+}
+.bold-mode .audit-log-page .font-medium {
+  font-weight: 500;
+}
+.bold-mode .audit-log-page .font-semibold {
+  font-weight: 600;
+}
+.bold-mode .audit-log-page .font-bold {
+  font-weight: 700;
+}
+
 /* Quick prompts row: no scrollbar on mobile, thin bar on desktop */
 .prompts-scroll {
   scrollbar-width: none;

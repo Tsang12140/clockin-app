@@ -40,7 +40,7 @@ type UserOverride = {
   userPhone?: string | null;
 };
 
-const EMOJIS = ['🟦', '🟩', '🟨', '🟧', '🟪', '🔵', '🟢', '🟡', '🟠', '🟣', '⭐', '🌙', '☀️', '💧', '🔥', '🍀', '🌸', '🌼', '🍎', '🍋', '🍇', '☕', '🎈', '🔔'];
+const EMOJIS = ['🐶', '🐱', '🐼', '🦊', '🐻', '🐨', '🐯', '🦁', '🐮', '🐷', '🐵', '🐸', '🐙', '🐢', '🐬', '🦋', '🐝', '🦉', '🦄', '🐳'];
 const UNKNOWN_CITY = '未知';
 const LOCAL_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 const RETENTION_DAYS = 180;
@@ -154,7 +154,7 @@ function demoFingerprints(): AuditFingerprintItem[] {
   return [
     {
       id: 'demo-iphone-chen',
-      emoji: '🟦',
+      emoji: '🐶',
       note: '演示：陈阿姨手机',
       userName: '陈阿姨',
       userPhone: '13800000001',
@@ -165,7 +165,7 @@ function demoFingerprints(): AuditFingerprintItem[] {
     },
     {
       id: 'demo-office-pc',
-      emoji: '🟩',
+      emoji: '🐱',
       note: '演示：办公室电脑',
       userName: '办公室账号',
       userPhone: '13800000002',
@@ -176,7 +176,7 @@ function demoFingerprints(): AuditFingerprintItem[] {
     },
     {
       id: 'demo-boss-android',
-      emoji: '🟨',
+      emoji: '🐼',
       note: '演示：老板安卓机',
       userName: '老板',
       userPhone: '13800000003',
@@ -187,7 +187,7 @@ function demoFingerprints(): AuditFingerprintItem[] {
     },
     {
       id: 'demo-ipad-home',
-      emoji: '🟧',
+      emoji: '🦊',
       note: '演示：家里平板',
       userName: '家里账号',
       userPhone: '13800000004',
@@ -204,6 +204,11 @@ function demoLogs(): AuditLogItem[] {
   const fp = (id: string) => fingerprints.find(item => item.id === id) ?? fingerprints[0];
   const rows: Array<[string, string, string, string, number]> = [
     ['demo-office-pc', 'page_view', '访问页面', '/settings/developer/audit', 12],
+    ['demo-office-pc', 'ui_click', '点击：设备指纹', '/settings/developer/audit', 11],
+    ['demo-iphone-chen', 'page_duration', '停留页面：48 秒', '/', 35],
+    ['demo-iphone-chen', 'ai_request', 'AI 提问', '/', 42],
+    ['demo-iphone-chen', 'ai_response', 'AI 完成回复', '/', 41],
+    ['demo-boss-android', 'client_error', '前端报错', '/salary/5?year=2026&month=5', 58],
     ['demo-ipad-home', 'save_ai_config', '修改 AI 配置', '/settings/developer/ai-config', 64],
     ['demo-ipad-home', 'page_view', '访问页面', '/settings/developer/ai-config', 70],
     ['demo-ipad-home', 'login', '登录系统', '/login', 75],

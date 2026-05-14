@@ -2,12 +2,12 @@ import {
   getAIConfigStatus,
   saveAIProviderConfig,
   testAIProviderConfig,
-  verifyDeveloperPassword,
   listPresets,
   savePreset,
   deletePreset,
 } from '@/lib/ai/config';
 import { recordAuditLog } from '@/lib/audit';
+import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,10 +32,10 @@ function badRequest(message: string, status = 400) {
 export async function POST(request: Request) {
   try {
     const body = await request.json() as AIConfigRequest;
-    const password = typeof body.password === 'string' ? body.password : '';
+    const session = await getSession();
 
-    if (!verifyDeveloperPassword(password)) {
-      return badRequest('开发者密码不正确。', 401);
+    if (session.developerUnlocked !== true) {
+      return badRequest('请先进入开发人员选项完成验证。', 401);
     }
 
     if (body.action === 'save') {

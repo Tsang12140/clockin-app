@@ -7,6 +7,7 @@ export interface SessionData {
   userName?: string;
   userPhone?: string;
   role?: string;
+  developerUnlocked?: boolean;
 }
 
 const sessionOptions = {

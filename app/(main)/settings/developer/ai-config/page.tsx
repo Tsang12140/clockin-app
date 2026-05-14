@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { ChevronLeft, EyeOff, Loader2, Save, ShieldCheck, TestTube2, Trash2 } from 'lucide-react';
 
 type AIConfigStatus = {
@@ -34,7 +34,7 @@ const providerOptions = [
 
 export default function AIConfigPage() {
   const [password, setPassword] = useState('');
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(true);
   const [status, setStatus] = useState<AIConfigStatus | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [provider, setProvider] = useState('deepseek');
@@ -67,12 +67,34 @@ export default function AIConfigPage() {
     const response = await fetch('/api/settings/ai-config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, ...body }),
+      body: JSON.stringify(body),
     });
     const data = await response.json();
     if (!response.ok || data.ok === false) throw new Error(data.message || '操作失败');
     return data;
   };
+
+  useEffect(() => {
+    let active = true;
+    setBusy(true);
+    setMessage('');
+    Promise.all([
+      callApi({ action: 'status' }),
+      callApi({ action: 'list-presets' }),
+    ]).then(([statusData, presetsData]) => {
+      if (!active) return;
+      applyStatus(statusData.status);
+      setPresets(presetsData.presets ?? []);
+    }).catch(error => {
+      if (!active) return;
+      setMessage(error instanceof Error ? error.message : '加载 AI 配置失败。');
+    }).finally(() => {
+      if (active) setBusy(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const unlock = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

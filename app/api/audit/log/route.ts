@@ -6,6 +6,7 @@ type AuditRequest = {
   action?: unknown;
   actionLabel?: unknown;
   pageUrl?: unknown;
+  detail?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -14,8 +15,11 @@ export async function POST(request: Request) {
     const action = typeof body.action === 'string' ? body.action : 'page_view';
     const actionLabel = typeof body.actionLabel === 'string' ? body.actionLabel : '访问页面';
     const pageUrl = typeof body.pageUrl === 'string' ? body.pageUrl : null;
+    const detail = body.detail && typeof body.detail === 'object'
+      ? body.detail as Record<string, unknown>
+      : null;
 
-    await recordAuditLog({ action, actionLabel, pageUrl });
+    await recordAuditLog({ action, actionLabel, pageUrl, detail });
     return Response.json({ ok: true });
   } catch (error) {
     console.warn('[audit] api log failed', error);
