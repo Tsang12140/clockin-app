@@ -455,10 +455,7 @@ export default function DesktopView({
 
               <div className="mt-5 rounded-xl border border-gray-100 overflow-hidden">
                 <div className="flex items-center justify-between bg-[#F8FAFF] px-4 py-3 border-b border-gray-100">
-                  <div>
-                    <div className="text-[13px] font-semibold text-gray-500">本周校对</div>
-                    <div className="text-[12px] font-normal text-gray-400 mt-0.5">点击日期格可切换到对应录入日</div>
-                  </div>
+                  <div className="text-[13px] font-semibold text-gray-500">本周校对</div>
                   <div className="text-[12px] font-normal text-gray-400">
                     {weekDays[0].slice(5).replace('-', '/')} - {weekDays[6].slice(5).replace('-', '/')}
                   </div>
