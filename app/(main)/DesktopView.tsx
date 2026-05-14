@@ -398,7 +398,7 @@ export default function DesktopView({
         : null;
     }
     if (rec.status === 'worked') {
-      return <span className="select-text text-[13px] font-bold text-[#1A3A8F]">{formatDesktopHours(rec.hours)}</span>;
+      return <span className="text-[13px] font-bold text-[#1A3A8F]">{formatDesktopHours(rec.hours)}</span>;
     }
     const label = rec.status === 'custom'
       ? (rec.statusLabel || '特殊')
@@ -537,7 +537,7 @@ export default function DesktopView({
                                 </td>
                               );
                             })}
-                            <td className={`select-text border-l border-gray-200 bg-white px-1 py-3 text-center text-[13px] font-bold text-[#1A3A8F] ${!isLast ? 'border-b border-gray-200' : ''}`}>
+                            <td className={`border-l border-gray-200 bg-white px-1 py-3 text-center text-[13px] font-bold text-[#1A3A8F] ${!isLast ? 'border-b border-gray-200' : ''}`}>
                               {total > 0 ? (total % 1 === 0 ? total : total.toFixed(1)) : ''}
                             </td>
                           </tr>

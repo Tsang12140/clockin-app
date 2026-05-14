@@ -122,7 +122,7 @@ export default function DesktopAttendanceEditor({
                   -
                 </button>
                 {rowCompleted ? (
-                  <span className="w-20 select-text text-center text-[24px] font-bold leading-none text-[#1A3A8F]">
+                  <span className="w-20 text-center text-[24px] font-bold leading-none text-[#1A3A8F]">
                     {isWork && row.hours ? formatDesktopHours(row.hours) : '-'}
                   </span>
                 ) : (
@@ -134,7 +134,7 @@ export default function DesktopAttendanceEditor({
                     readOnly={locked}
                     onChange={e => onSetHours(emp.id, e.target.value)}
                     onBlur={() => onNormalizeHours(emp.id)}
-                    className="h-10 w-20 select-text rounded-lg border border-transparent bg-transparent text-center text-[22px] font-bold leading-none text-[#1A3A8F] focus:outline-none focus:ring-2 focus:ring-[#3370FF]/20 disabled:text-gray-300"
+                    className="h-10 w-20 rounded-lg border border-transparent bg-transparent text-center text-[22px] font-bold leading-none text-[#1A3A8F] focus:outline-none focus:ring-2 focus:ring-[#3370FF]/20 disabled:text-gray-300"
                   />
                 )}
                 <button
@@ -165,7 +165,7 @@ export default function DesktopAttendanceEditor({
                       placeholder="自定义"
                       readOnly={locked}
                       onChange={e => onSetCustomLabel(emp.id, e.target.value)}
-                      className="h-10 min-w-0 flex-1 select-text rounded-xl border border-[#DDE6F3] bg-white px-3 text-[14px] font-semibold text-gray-700 outline-none transition placeholder:text-gray-300 focus:border-[#3370FF] focus:ring-2 focus:ring-[#3370FF]/15"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-[#DDE6F3] bg-white px-3 text-[14px] font-semibold text-gray-700 outline-none transition placeholder:text-gray-300 focus:border-[#3370FF] focus:ring-2 focus:ring-[#3370FF]/15"
                     />
                     <button
                       onClick={() => selectStatus(emp.id, 'worked')}
