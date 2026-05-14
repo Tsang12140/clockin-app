@@ -142,6 +142,104 @@ function cutoffDate() {
   return date.toISOString();
 }
 
+function shouldShowDemoAuditData() {
+  return process.env.NODE_ENV !== 'production';
+}
+
+function minutesAgo(minutes: number) {
+  return new Date(Date.now() - minutes * 60 * 1000).toISOString();
+}
+
+function demoFingerprints(): AuditFingerprintItem[] {
+  return [
+    {
+      id: 'demo-iphone-chen',
+      emoji: '🟦',
+      note: '演示：陈阿姨手机',
+      userName: '陈阿姨',
+      userPhone: '13800000001',
+      ip: '113.88.21.16',
+      city: '江门市蓬江区',
+      device: '手机 · iOS · 微信',
+      lastSeenAt: minutesAgo(12),
+    },
+    {
+      id: 'demo-office-pc',
+      emoji: '🟩',
+      note: '演示：办公室电脑',
+      userName: '办公室账号',
+      userPhone: '13800000002',
+      ip: '183.6.54.88',
+      city: '江门市蓬江区',
+      device: '电脑 · Windows · Chrome',
+      lastSeenAt: minutesAgo(24),
+    },
+    {
+      id: 'demo-boss-android',
+      emoji: '🟨',
+      note: '演示：老板安卓机',
+      userName: '老板',
+      userPhone: '13800000003',
+      ip: '120.232.18.9',
+      city: '佛山市顺德区',
+      device: '手机 · Android · Chrome',
+      lastSeenAt: minutesAgo(171),
+    },
+    {
+      id: 'demo-ipad-home',
+      emoji: '🟧',
+      note: '演示：家里平板',
+      userName: '家里账号',
+      userPhone: '13800000004',
+      ip: '14.215.177.39',
+      city: '广州市天河区',
+      device: '平板 · iOS · Safari',
+      lastSeenAt: minutesAgo(64),
+    },
+  ];
+}
+
+function demoLogs(): AuditLogItem[] {
+  const fingerprints = demoFingerprints();
+  const fp = (id: string) => fingerprints.find(item => item.id === id) ?? fingerprints[0];
+  const rows: Array<[string, string, string, string, number]> = [
+    ['demo-office-pc', 'page_view', '访问页面', '/settings/developer/audit', 12],
+    ['demo-ipad-home', 'save_ai_config', '修改 AI 配置', '/settings/developer/ai-config', 64],
+    ['demo-ipad-home', 'page_view', '访问页面', '/settings/developer/ai-config', 70],
+    ['demo-ipad-home', 'login', '登录系统', '/login', 75],
+    ['demo-boss-android', 'unlock_attendance', '修改工时：解锁 2026-05-12', '/', 171],
+    ['demo-boss-android', 'page_view', '访问页面', '/salary/5?year=2026&month=5', 178],
+    ['demo-boss-android', 'login', '登录系统', '/login', 185],
+    ['demo-office-pc', 'update_employee', '修改员工：林一鸣', '/employees/5', 286],
+    ['demo-office-pc', 'page_view', '访问页面', '/employees', 292],
+    ['demo-office-pc', 'login', '登录系统', '/login', 300],
+    ['demo-iphone-chen', 'save_attendance', '登记工时：2026-05-13', '/', 410],
+    ['demo-iphone-chen', 'page_view', '访问页面', '/', 416],
+    ['demo-iphone-chen', 'login', '登录系统', '/login', 420],
+  ];
+
+  return rows.map(([fingerprintId, action, actionLabel, pageUrl, ago], index) => {
+    const item = fp(fingerprintId);
+    return {
+      id: 9000 + index,
+      fingerprintId,
+      emoji: item.emoji,
+      note: item.note,
+      action,
+      actionLabel,
+      pageUrl,
+      userId: fingerprintId,
+      userName: item.userName,
+      userPhone: item.userPhone,
+      ip: item.ip,
+      city: item.city,
+      device: item.device,
+      detail: { demo: true, source: 'local-preview' },
+      createdAt: minutesAgo(ago),
+    };
+  });
+}
+
 async function ensureAuditTables() {
   tableReady ??= db.execute(sql`
     CREATE TABLE IF NOT EXISTS clockin.audit_fingerprints (
@@ -289,7 +387,7 @@ export async function listAuditLogs(limit = 200): Promise<AuditLogItem[]> {
       ORDER BY l.created_at DESC
       LIMIT ${safeLimit}
     `) as { rows?: Record<string, unknown>[] };
-    return (result.rows ?? []).map(row => ({
+    const items = (result.rows ?? []).map(row => ({
       id: Number(row.id),
       fingerprintId: String(row.fingerprint_id),
       emoji: String(row.emoji ?? '•'),
@@ -306,9 +404,10 @@ export async function listAuditLogs(limit = 200): Promise<AuditLogItem[]> {
       detail: row.detail as Record<string, unknown> | null,
       createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
     }));
+    return items.length > 0 || !shouldShowDemoAuditData() ? items : demoLogs();
   } catch (error) {
     console.warn('[audit] failed to list logs', error);
-    return [];
+    return shouldShowDemoAuditData() ? demoLogs() : [];
   }
 }
 
@@ -322,7 +421,7 @@ export async function listAuditFingerprints(limit = 80): Promise<AuditFingerprin
       ORDER BY last_seen_at DESC
       LIMIT ${safeLimit}
     `) as { rows?: Record<string, unknown>[] };
-    return (result.rows ?? []).map(row => ({
+    const items = (result.rows ?? []).map(row => ({
       id: String(row.id),
       emoji: String(row.emoji ?? '•'),
       note: text(row.note, 80),
@@ -333,9 +432,10 @@ export async function listAuditFingerprints(limit = 80): Promise<AuditFingerprin
       device: text(row.device, 120),
       lastSeenAt: row.last_seen_at instanceof Date ? row.last_seen_at.toISOString() : String(row.last_seen_at),
     }));
+    return items.length > 0 || !shouldShowDemoAuditData() ? items : demoFingerprints();
   } catch (error) {
     console.warn('[audit] failed to list fingerprints', error);
-    return [];
+    return shouldShowDemoAuditData() ? demoFingerprints() : [];
   }
 }
 
