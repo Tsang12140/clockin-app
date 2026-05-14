@@ -207,7 +207,7 @@ function getDaysToInspect(year: number, month: number) {
 
   for (let day = 1; day <= lastDay; day++) {
     const date = dateOf(year, month, day);
-    if (date > today) break;
+    if (date >= today) break;
     const dow = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
     if (dow !== 0) days.push(date);
   }
