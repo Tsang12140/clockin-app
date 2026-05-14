@@ -1,5 +1,6 @@
 import BottomNav from '@/components/BottomNav';
 import AIAssistant from '@/components/AIAssistant';
+import ActivityLogger from '@/components/ActivityLogger';
 import { getSession } from '@/lib/session';
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       <BottomNav />
       <main className="pb-20 md:pb-0 md:pt-[72px]">{children}</main>
       <AIAssistant userKey={aiUserKey} />
+      <ActivityLogger />
     </div>
   );
 }

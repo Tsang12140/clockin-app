@@ -4,6 +4,7 @@ import { db, employees, hourlyRateHistory, positions } from '@/db';
 import { desc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAuth } from '@/lib/requireAuth';
+import { recordAuditLog } from '@/lib/audit';
 
 async function resolvePositionId(name: string): Promise<number | null> {
   const trimmed = name.trim();
@@ -19,7 +20,7 @@ export async function updateEmployee(id: number, data: {
   name: string; gender: string; phone: string; idCard: string;
   positionName: string; hireDate: string; leaveDate: string; notes: string;
 }) {
-  await requireAuth();
+  const session = await requireAuth();
   try {
     const positionId = await resolvePositionId(data.positionName);
     await db.update(employees).set({
@@ -34,6 +35,13 @@ export async function updateEmployee(id: number, data: {
     }).where(eq(employees.id, id));
     revalidatePath(`/employees/${id}`);
     revalidatePath('/employees');
+    await recordAuditLog({
+      action: 'update_employee',
+      actionLabel: `修改员工：${data.name}`,
+      pageUrl: `/employees/${id}`,
+      user: session,
+      detail: { employeeId: id, name: data.name, positionName: data.positionName },
+    });
     return { ok: true };
   } catch (e) {
     console.error(e);
@@ -44,7 +52,7 @@ export async function updateEmployee(id: number, data: {
 export async function addRateHistory(employeeId: number, data: {
   rate: string; effectiveDate: string; notes: string;
 }) {
-  await requireAuth();
+  const session = await requireAuth();
   try {
     await db.insert(hourlyRateHistory).values({
       employeeId,
@@ -65,6 +73,13 @@ export async function addRateHistory(employeeId: number, data: {
         .where(eq(employees.id, employeeId));
     }
     revalidatePath(`/employees/${employeeId}`);
+    await recordAuditLog({
+      action: 'add_rate_history',
+      actionLabel: `修改工资：员工 ${employeeId}`,
+      pageUrl: `/employees/${employeeId}`,
+      user: session,
+      detail: { employeeId, rate: data.rate, effectiveDate: data.effectiveDate },
+    });
     return { ok: true };
   } catch (e) {
     console.error(e);
@@ -73,12 +88,19 @@ export async function addRateHistory(employeeId: number, data: {
 }
 
 export async function markInactive(id: number, leaveDate: string) {
-  await requireAuth();
+  const session = await requireAuth();
   try {
     await db.update(employees)
       .set({ status: 'inactive', leaveDate })
       .where(eq(employees.id, id));
     revalidatePath('/employees');
+    await recordAuditLog({
+      action: 'mark_employee_inactive',
+      actionLabel: `员工离职：${id}`,
+      pageUrl: `/employees/${id}`,
+      user: session,
+      detail: { employeeId: id, leaveDate },
+    });
     return { ok: true };
   } catch (e) {
     console.error(e);

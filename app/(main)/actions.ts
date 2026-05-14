@@ -7,6 +7,7 @@ import { getAttendanceForRange } from '@/lib/queries';
 import { addDays } from '@/lib/utils';
 import { requireAuth } from '@/lib/requireAuth';
 import { invalidateCacheForDate } from '@/lib/ai/factsCache';
+import { recordAuditLog } from '@/lib/audit';
 
 interface AttendanceEntry {
   employeeId: number;
@@ -17,7 +18,7 @@ interface AttendanceEntry {
 }
 
 export async function saveAttendance(entries: AttendanceEntry[]) {
-  await requireAuth();
+  const session = await requireAuth();
   try {
     for (const entry of entries) {
       await db
@@ -44,6 +45,17 @@ export async function saveAttendance(entries: AttendanceEntry[]) {
     }
     const uniqueDates = [...new Set(entries.map(e => e.workDate))];
     await Promise.all(uniqueDates.map(d => invalidateCacheForDate(d)));
+    await recordAuditLog({
+      action: 'save_attendance',
+      actionLabel: `登记工时：${uniqueDates.join('、')}`,
+      pageUrl: '/',
+      user: session,
+      detail: {
+        dates: uniqueDates,
+        entryCount: entries.length,
+        statuses: entries.map(e => ({ employeeId: e.employeeId, status: e.status, hours: e.hours })),
+      },
+    });
     revalidatePath('/');
     return { ok: true };
   } catch (e) {
@@ -53,12 +65,19 @@ export async function saveAttendance(entries: AttendanceEntry[]) {
 }
 
 export async function unlockDay(workDate: string) {
-  await requireAuth();
+  const session = await requireAuth();
   try {
     await db
       .update(attendanceRecords)
       .set({ isLocked: false })
       .where(eq(attendanceRecords.workDate, workDate));
+    await recordAuditLog({
+      action: 'unlock_attendance',
+      actionLabel: `修改工时：解锁 ${workDate}`,
+      pageUrl: '/',
+      user: session,
+      detail: { workDate },
+    });
     revalidatePath('/');
     return { ok: true };
   } catch (e) {
@@ -68,12 +87,19 @@ export async function unlockDay(workDate: string) {
 }
 
 export async function clearAttendanceDay(workDate: string) {
-  await requireAuth();
+  const session = await requireAuth();
   try {
     await db
       .delete(attendanceRecords)
       .where(eq(attendanceRecords.workDate, workDate));
     await invalidateCacheForDate(workDate);
+    await recordAuditLog({
+      action: 'clear_attendance',
+      actionLabel: `清空工时：${workDate}`,
+      pageUrl: '/',
+      user: session,
+      detail: { workDate },
+    });
     revalidatePath('/');
     return { ok: true };
   } catch (e) {

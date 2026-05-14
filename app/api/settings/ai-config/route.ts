@@ -7,6 +7,7 @@ import {
   savePreset,
   deletePreset,
 } from '@/lib/ai/config';
+import { recordAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,12 @@ export async function POST(request: Request) {
         apiKey: typeof body.apiKey === 'string' ? body.apiKey : undefined,
         presetId: typeof body.presetId === 'string' ? body.presetId : undefined,
       });
+      await recordAuditLog({
+        action: 'save_ai_config',
+        actionLabel: '修改 AI 配置',
+        pageUrl: '/settings/developer/ai-config',
+        detail: { provider: status.provider, model: status.model, enabled: status.enabled },
+      });
       return Response.json({ ok: true, status });
     }
 
@@ -88,6 +95,12 @@ export async function POST(request: Request) {
         apiKey: typeof body.apiKey === 'string' && body.apiKey.trim() ? body.apiKey : undefined,
         fromPresetId: typeof body.presetId === 'string' ? body.presetId : undefined,
       });
+      await recordAuditLog({
+        action: 'save_ai_preset',
+        actionLabel: '保存 AI 预设',
+        pageUrl: '/settings/developer/ai-config',
+        detail: { provider: preset.provider, model: preset.model, presetId: preset.id },
+      });
       return Response.json({ ok: true, preset });
     }
 
@@ -95,6 +108,12 @@ export async function POST(request: Request) {
       const id = typeof body.id === 'string' ? body.id.trim() : '';
       if (!id) return badRequest('缺少预设 ID。');
       await deletePreset(id);
+      await recordAuditLog({
+        action: 'delete_ai_preset',
+        actionLabel: '删除 AI 预设',
+        pageUrl: '/settings/developer/ai-config',
+        detail: { presetId: id },
+      });
       return Response.json({ ok: true });
     }
 

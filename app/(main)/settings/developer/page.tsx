@@ -57,6 +57,17 @@ export default function DeveloperSettingsPage() {
               </div>
               <ChevronRight size={18} className="text-gray-300" />
             </Link>
+
+            <Link
+              href="/settings/developer/audit"
+              className="flex items-center justify-between px-4 py-4"
+            >
+              <div>
+                <div className="text-[15px] font-medium text-gray-800">操作日志</div>
+                <div className="text-[12px] text-gray-400 mt-0.5">登录、访问、工时和设备指纹</div>
+              </div>
+              <ChevronRight size={18} className="text-gray-300" />
+            </Link>
           </div>
         </div>
       </div>

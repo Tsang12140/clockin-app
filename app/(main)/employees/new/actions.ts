@@ -4,6 +4,7 @@ import { db, employees, hourlyRateHistory, positions } from '@/db';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAuth } from '@/lib/requireAuth';
+import { recordAuditLog } from '@/lib/audit';
 
 async function resolvePositionId(name: string): Promise<number | null> {
   const trimmed = name.trim();
@@ -19,7 +20,7 @@ export async function createEmployee(data: {
   name: string; gender: string; phone: string; idCard: string;
   positionName: string; hireDate: string; hourlyRate: string; notes: string;
 }) {
-  await requireAuth();
+  const session = await requireAuth();
   try {
     const positionId = await resolvePositionId(data.positionName);
     const [emp] = await db.insert(employees).values({
@@ -44,6 +45,13 @@ export async function createEmployee(data: {
     }
 
     revalidatePath('/employees');
+    await recordAuditLog({
+      action: 'create_employee',
+      actionLabel: `新增员工：${data.name.trim()}`,
+      pageUrl: '/employees/new',
+      user: session,
+      detail: { employeeId: emp.id, name: data.name.trim(), positionName: data.positionName },
+    });
     return { ok: true, id: emp.id };
   } catch (e) {
     console.error(e);
