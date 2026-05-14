@@ -3,12 +3,13 @@
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, UserRound } from 'lucide-react';
 import { logout } from '@/app/login/actions';
 
 export default function SettingsPage() {
   const [boldMode, setBoldMode] = useState(true);
   const [fontLevel, setFontLevelState] = useState(0);
+  const [account, setAccount] = useState('读取中');
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -18,6 +19,21 @@ export default function SettingsPage() {
       setFontLevelState(parseInt(localStorage.getItem('clockin_fontsize') ?? '0'));
     }, 0);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/account')
+      .then(response => response.json())
+      .then(data => {
+        if (active && typeof data.account === 'string') setAccount(data.account);
+      })
+      .catch(() => {
+        if (active) setAccount('未知账号');
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const setFontLevel = (level: number) => {
@@ -93,11 +109,20 @@ export default function SettingsPage() {
           </div>
 
           {/* Account */}
-          <div className="bg-white rounded-2xl shadow-sm">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EBF0FF] text-[#3370FF]">
+                <UserRound size={19} />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[12px] font-normal text-gray-400">当前账号</div>
+                <div className="mt-0.5 truncate text-[15px] font-medium text-gray-800">{account}</div>
+              </div>
+            </div>
             <button
               onClick={handleLogout}
               disabled={isPending}
-              className="w-full flex items-center px-4 py-4 text-[15px] font-medium text-red-500 disabled:opacity-60"
+              className="flex w-full items-center rounded-2xl bg-white px-4 py-4 text-[15px] font-medium text-red-500 shadow-sm disabled:opacity-60"
             >
               {isPending ? '退出中…' : '退出登录'}
             </button>
