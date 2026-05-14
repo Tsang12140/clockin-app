@@ -44,7 +44,7 @@ export default function BottomNav() {
             <img src="/logo.svg" alt="" className="h-8 w-8 rounded-[9px] shadow-sm" />
             <div>
               <div className="text-[16px] font-bold leading-tight tracking-[-0.01em] text-[#1A3A8F]">荣源考勤</div>
-              <div className="text-[11px] font-normal leading-tight text-gray-400">工厂考勤管理系统</div>
+              <div className="text-[11px] font-normal leading-tight text-gray-400" style={{ fontWeight: 400 }}>工厂考勤管理系统</div>
             </div>
           </Link>
           <div className="flex items-center gap-1 rounded-2xl bg-[#F0F4FA] p-1">

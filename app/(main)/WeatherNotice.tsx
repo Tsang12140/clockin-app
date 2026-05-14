@@ -68,7 +68,7 @@ export default function WeatherNotice({
         {weatherDecision?.showAnimation && <WeatherBg category={weatherDecision.category} />}
         <div className="relative z-10 flex min-h-20 items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
-            <div className="text-[12px] font-medium text-gray-400">{weatherLabel}天气</div>
+            <div className="text-[13px] font-semibold text-gray-500">{weatherLabel}天气</div>
             <div className="mt-1 flex items-center gap-2 min-w-0">
               <span className="text-[20px] shrink-0">{getWeatherEmoji(displayWeather.iconDay)}</span>
               <span className="block min-w-0 overflow-hidden text-[15px] font-semibold leading-snug text-gray-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">{desktopMessage}</span>

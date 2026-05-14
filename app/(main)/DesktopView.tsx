@@ -408,7 +408,7 @@ export default function DesktopView({
             <div className="h-full bg-white rounded-2xl shadow-sm px-6 py-5">
               <div className="flex items-center justify-between gap-4 mb-5">
                 <div className="min-w-0">
-                  <div className="text-[13px] font-medium text-gray-400">考勤录入</div>
+                  <div className="text-[13px] font-semibold text-gray-500">考勤录入</div>
                   <div className="mt-1 flex items-center gap-2 min-w-0">
                     {locked && <Lock size={16} className="text-gray-400 shrink-0" />}
                     {!locked && hasRecs && <Edit2 size={16} className="text-[#3370FF] shrink-0" />}
@@ -456,10 +456,10 @@ export default function DesktopView({
               <div className="mt-5 rounded-xl border border-gray-100 overflow-hidden">
                 <div className="flex items-center justify-between bg-[#F8FAFF] px-4 py-3 border-b border-gray-100">
                   <div>
-                    <div className="text-[15px] font-bold text-gray-700">本周校对</div>
-                    <div className="text-[12px] font-medium text-gray-400 mt-0.5">点击日期格可切换到对应录入日</div>
+                    <div className="text-[13px] font-semibold text-gray-500">本周校对</div>
+                    <div className="text-[12px] font-normal text-gray-400 mt-0.5">点击日期格可切换到对应录入日</div>
                   </div>
-                  <div className="text-[12px] font-semibold text-gray-400">
+                  <div className="text-[12px] font-normal text-gray-400">
                     {weekDays[0].slice(5).replace('-', '/')} - {weekDays[6].slice(5).replace('-', '/')}
                   </div>
                 </div>
@@ -472,7 +472,7 @@ export default function DesktopView({
                     </colgroup>
                     <thead>
                       <tr>
-                        <th className="text-left bg-white px-3 py-3 text-gray-500 font-semibold border-b border-gray-200">姓名</th>
+                        <th className="text-center bg-white px-3 py-3 text-gray-500 font-semibold border-b border-gray-200">姓名</th>
                         {weekDays.map((date, index) => {
                           const isSelected = date === selectedDate;
                           const dayNum = parseInt(date.slice(8, 10));
@@ -495,7 +495,7 @@ export default function DesktopView({
                         const isLast = rowIdx === employees.length - 1;
                         return (
                           <tr key={emp.id}>
-                            <td className={`select-text bg-white px-3 py-3 font-semibold text-gray-700 ${!isLast ? 'border-b border-gray-200' : ''}`}>
+                            <td className={`select-text bg-white px-3 py-3 text-center font-semibold text-gray-700 ${!isLast ? 'border-b border-gray-200' : ''}`}>
                               {emp.name}
                             </td>
                             {weekDays.map(date => {

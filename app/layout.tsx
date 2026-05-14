@@ -3,7 +3,7 @@ import './globals.css';
 import ClientPreferences from '@/components/ClientPreferences';
 
 export const metadata: Metadata = {
-  title: '工厂考勤',
+  title: '荣源考勤系统',
   description: '工厂考勤与工资管理系统',
 };
 
