@@ -9,7 +9,7 @@ type PageProps = {
   searchParams?: Promise<{ view?: string }>;
 };
 
-const WRITE_ACTIONS = new Set([
+const IMPORTANT_ACTIONS = new Set([
   'save_attendance',
   'unlock_attendance',
   'clear_attendance',
@@ -17,21 +17,13 @@ const WRITE_ACTIONS = new Set([
   'update_employee',
   'add_rate_history',
   'mark_employee_inactive',
+  'save_ai_config',
+  'save_ai_preset',
+  'delete_ai_preset',
 ]);
 
-const CONFIG_ACTIONS = new Set(['save_ai_config', 'save_ai_preset', 'delete_ai_preset']);
-
-function formatTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString('zh-CN', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
+const VISIT_ACTIONS = new Set(['page_view']);
+const ACCOUNT_ACTIONS = new Set(['login', 'logout']);
 
 function shortPhone(phone: string | null) {
   if (!phone) return null;
@@ -41,8 +33,8 @@ function shortPhone(phone: string | null) {
 function shortCity(city: string | null) {
   if (!city || city === '未知') return '未知城市';
   return city
-    .replace(/市$/, '')
-    .replace(/省$/, '')
+    .replace(/市/g, '')
+    .replace(/省/g, '')
     .replace(/壮族自治区|回族自治区|维吾尔自治区|自治区|特别行政区/g, '');
 }
 
@@ -66,88 +58,159 @@ function pageName(pageUrl: string | null) {
   return pageUrl;
 }
 
-function actionTone(action: string) {
-  if (WRITE_ACTIONS.has(action)) {
-    return {
-      label: '重点',
-      dot: 'bg-[#3370FF]',
-      row: 'bg-[#F8FAFF]',
-      text: 'text-[#1A3A8F]',
-    };
-  }
-  if (CONFIG_ACTIONS.has(action)) {
-    return {
-      label: '配置',
-      dot: 'bg-purple-400',
-      row: 'bg-purple-50/40',
-      text: 'text-purple-700',
-    };
-  }
-  if (action === 'login' || action === 'logout') {
-    return {
-      label: '账号',
-      dot: 'bg-green-500',
-      row: 'bg-white',
-      text: 'text-green-700',
-    };
-  }
-  return {
-    label: '访问',
-    dot: 'bg-gray-300',
-    row: 'bg-white',
-    text: 'text-gray-500',
-  };
+function relativeTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const diff = Math.max(0, Date.now() - date.getTime());
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (diff < minute) return '刚刚';
+  if (diff < hour) return `${Math.floor(diff / minute)} 分钟前`;
+  if (diff < day) return `${Math.floor(diff / hour)} 小时前`;
+  return date.toLocaleString('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 }
 
-function fingerprintSummary(item: Pick<AuditFingerprintItem, 'note' | 'userPhone' | 'device' | 'city'>) {
+function isToday(value: string) {
+  const date = new Date(value);
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear()
+    && date.getMonth() === now.getMonth()
+    && date.getDate() === now.getDate();
+}
+
+function actorName(item: Pick<AuditFingerprintItem, 'note' | 'userPhone' | 'device' | 'city'>) {
   if (item.note) return item.note;
   const tail = shortPhone(item.userPhone);
   return [tail ? `尾号${tail}` : '未知账号', deviceType(item.device), shortCity(item.city)].join(' · ');
 }
 
-function logActor(log: AuditLogItem) {
-  if (log.note) return log.note;
-  return fingerprintSummary(log);
+function actionTarget(label: string) {
+  return label.includes('：') ? label.split('：').slice(1).join('：') : '';
 }
 
-function LogList({ logs }: { logs: AuditLogItem[] }) {
+function eventSentence(log: AuditLogItem) {
+  const actor = actorName(log);
+  const target = actionTarget(log.actionLabel);
+  switch (log.action) {
+    case 'login':
+      return { icon: '🔐', text: `${actor} 登录了系统` };
+    case 'logout':
+      return { icon: '🚪', text: `${actor} 退出了系统` };
+    case 'page_view':
+      return { icon: '👀', text: `${actor} 打开了${pageName(log.pageUrl)}` };
+    case 'save_attendance':
+      return { icon: '📝', text: `${actor} 登记了工时${target ? `：${target}` : ''}` };
+    case 'unlock_attendance':
+      return { icon: '🔓', text: `${actor} 解锁了工时${target ? `：${target}` : ''}` };
+    case 'clear_attendance':
+      return { icon: '🧹', text: `${actor} 清空了工时${target ? `：${target}` : ''}` };
+    case 'create_employee':
+      return { icon: '➕', text: `${actor} 新增了员工${target ? `：${target}` : ''}` };
+    case 'update_employee':
+      return { icon: '✏️', text: `${actor} 修改了员工资料${target ? `：${target}` : ''}` };
+    case 'add_rate_history':
+      return { icon: '💰', text: `${actor} 修改了工资${target ? `：${target}` : ''}` };
+    case 'mark_employee_inactive':
+      return { icon: '📌', text: `${actor} 标记了员工离职${target ? `：${target}` : ''}` };
+    case 'save_ai_config':
+      return { icon: '🤖', text: `${actor} 修改了 AI 配置` };
+    case 'save_ai_preset':
+      return { icon: '💾', text: `${actor} 保存了 AI 预设` };
+    case 'delete_ai_preset':
+      return { icon: '🗑️', text: `${actor} 删除了 AI 预设` };
+    default:
+      return { icon: '📍', text: `${actor} 触发了${log.actionLabel || '未知事件'}` };
+  }
+}
+
+function eventTone(action: string) {
+  if (IMPORTANT_ACTIONS.has(action)) {
+    return {
+      border: 'border-[#DDE6FF]',
+      bg: 'bg-[#F8FAFF]',
+      icon: 'bg-[#EBF0FF]',
+      text: 'text-[#1A3A8F]',
+    };
+  }
+  if (ACCOUNT_ACTIONS.has(action)) {
+    return {
+      border: 'border-green-100',
+      bg: 'bg-white',
+      icon: 'bg-green-50',
+      text: 'text-green-700',
+    };
+  }
+  return {
+    border: 'border-gray-100',
+    bg: 'bg-white',
+    icon: 'bg-gray-50',
+    text: 'text-gray-700',
+  };
+}
+
+function buildStats(logs: AuditLogItem[], fingerprints: AuditFingerprintItem[]) {
+  const todayLogs = logs.filter(log => isToday(log.createdAt));
+  return [
+    { label: '今日事件', value: todayLogs.length },
+    { label: '重点操作', value: todayLogs.filter(log => IMPORTANT_ACTIONS.has(log.action)).length },
+    { label: '页面访问', value: todayLogs.filter(log => VISIT_ACTIONS.has(log.action)).length },
+    { label: '设备指纹', value: fingerprints.length },
+  ];
+}
+
+function Stats({ logs, fingerprints }: { logs: AuditLogItem[]; fingerprints: AuditFingerprintItem[] }) {
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <div>
-          <h2 className="text-[14px] font-medium text-gray-800">最近日志</h2>
-          <div className="mt-0.5 text-[12px] font-normal text-gray-400">优先看登记、修改、配置，其次再看登录和访问</div>
+    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      {buildStats(logs, fingerprints).map(item => (
+        <div key={item.label} className="rounded-xl border border-white bg-white/80 px-3 py-3 shadow-sm">
+          <div className="text-[12px] font-normal text-gray-400">{item.label}</div>
+          <div className="mt-1 text-[20px] font-medium text-[#1A3A8F]">{item.value}</div>
         </div>
+      ))}
+    </div>
+  );
+}
+
+function EventStream({ logs }: { logs: AuditLogItem[] }) {
+  return (
+    <section className="mt-3 rounded-2xl bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[14px] font-medium text-gray-800">事件动态</h2>
         <span className="text-[12px] font-normal text-gray-400">{logs.length} 条</span>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-100">
+      <div className="space-y-2">
         {logs.length === 0 && (
-          <div className="bg-[#F8FAFF] px-3 py-8 text-center text-[13px] font-normal text-gray-400">
+          <div className="rounded-xl bg-[#F8FAFF] px-3 py-8 text-center text-[13px] font-normal text-gray-400">
             暂无日志
           </div>
         )}
-        {logs.map((log, index) => {
-          const tone = actionTone(log.action);
+        {logs.map(log => {
+          const sentence = eventSentence(log);
+          const tone = eventTone(log.action);
           return (
-            <div
-              key={log.id}
-              className={`px-3 py-3 ${tone.row} ${index !== logs.length - 1 ? 'border-b border-gray-100' : ''}`}
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
-                <span className="shrink-0 text-[12px] font-normal text-gray-400">{formatTime(log.createdAt)}</span>
-                <span className="shrink-0 text-[15px] leading-none">{log.emoji}</span>
-                <span className={`min-w-0 truncate text-[13px] font-medium ${tone.text}`}>{log.actionLabel}</span>
+            <div key={log.id} className={`flex gap-3 rounded-xl border ${tone.border} ${tone.bg} px-3 py-3`}>
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tone.icon} text-[17px]`}>
+                {sentence.icon}
               </div>
-              <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[12px] font-normal text-gray-400">
-                <span className="truncate">{logActor(log)}</span>
-                <span className="shrink-0">·</span>
-                <span className="shrink-0">{shortCity(log.city)}</span>
-                <span className="shrink-0">·</span>
-                <span className="shrink-0">{deviceType(log.device)}</span>
-                <span className="shrink-0">·</span>
-                <span className="min-w-0 truncate">{pageName(log.pageUrl)}</span>
+              <div className="min-w-0 flex-1">
+                <div className={`truncate text-[13px] font-medium ${tone.text}`}>{sentence.text}</div>
+                <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[12px] font-normal text-gray-400">
+                  <span className="shrink-0">{relativeTime(log.createdAt)}</span>
+                  <span className="shrink-0">·</span>
+                  <span className="shrink-0">{shortCity(log.city)}</span>
+                  <span className="shrink-0">·</span>
+                  <span className="shrink-0">{deviceType(log.device)}</span>
+                  <span className="shrink-0">·</span>
+                  <span className="min-w-0 truncate">{pageName(log.pageUrl)}</span>
+                </div>
               </div>
             </div>
           );
@@ -181,7 +244,7 @@ function FingerprintList({ fingerprints }: { fingerprints: AuditFingerprintItem[
                 {item.emoji}
               </span>
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-gray-800">
-                {fingerprintSummary(item)}
+                {actorName(item)}
               </span>
               <ChevronRight size={16} className="shrink-0 text-gray-300 transition group-open:rotate-90" />
             </summary>
@@ -229,7 +292,7 @@ export default async function AuditPage({ searchParams }: PageProps) {
           </Link>
           <div className="min-w-0 flex-1">
             <h1 className="text-[17px] font-semibold text-[#1A3A8F]">操作日志</h1>
-            <div className="mt-0.5 text-[12px] font-normal text-gray-400">重点动作优先扫，设备指纹单独查看</div>
+            <div className="mt-0.5 text-[12px] font-normal text-gray-400">用人话看登录、访问和关键操作</div>
           </div>
           <Link
             href={view === 'logs' ? '/settings/developer/audit?view=fingerprints' : '/settings/developer/audit'}
@@ -241,7 +304,10 @@ export default async function AuditPage({ searchParams }: PageProps) {
 
         <div className="px-3 py-3 md:px-0">
           {view === 'logs' ? (
-            <LogList logs={logs} />
+            <>
+              <Stats logs={logs} fingerprints={fingerprints} />
+              <EventStream logs={logs} />
+            </>
           ) : (
             <FingerprintList fingerprints={fingerprints} />
           )}
